@@ -37,13 +37,89 @@ src="https://www.facebook.com/tr?id=918081184325058&ev=PageView&noscript=1"
   ═══════════════════════════════════════════ -->
 <title>Senso de Ser | Desenvolvimento Feminino e Evolução Pessoal</title>
 <meta name="description" content="O Senso de Ser é um espaço dedicado ao desenvolvimento feminino, autoconhecimento e evolução. Descubra estratégias para a sua jornada de transformação.">
+
+<!-- ═══════════════════════════════════════════
+     TITLE LOCK — Impede que o bundle do Framer
+     sobrescreva o título correto da página.
+     O Framer hidrata um app React que tenta
+     setar document.title com metadados antigos
+     do projeto. Este script intercepta o setter
+     e força o título correto via defineProperty
+     + MutationObserver como fallback.
+═══════════════════════════════════════════ -->
+<script>
+(function () {
+  var TITLE = "Senso de Ser | Desenvolvimento Feminino e Evolução Pessoal";
+  var DESCRIPTION = "O Senso de Ser é um espaço dedicado ao desenvolvimento feminino, autoconhecimento e evolução. Descubra estratégias para a sua jornada de transformação.";
+
+  /* 1. Bloqueia document.title via Object.defineProperty */
+  var nativeDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'title');
+  if (nativeDescriptor && nativeDescriptor.set) {
+    Object.defineProperty(document, 'title', {
+      get: function () {
+        return nativeDescriptor.get.call(this);
+      },
+      set: function () {
+        /* ignora qualquer valor que o Framer tente setar */
+        nativeDescriptor.set.call(this, TITLE);
+      },
+      configurable: true,
+      enumerable: true
+    });
+  }
+
+  /* 2. MutationObserver como fallback — reverte se o Framer
+        manipular o nó <title> diretamente via innerHTML/textContent */
+  function lockTitle() {
+    var titleEl = document.querySelector('title');
+    if (!titleEl) return;
+    if (titleEl.textContent !== TITLE) {
+      try {
+        /* Remove o lock temporariamente para poder escrever */
+        Object.defineProperty(document, 'title', nativeDescriptor);
+      } catch (e) {}
+      document.title = TITLE;
+      /* Reaplica o lock */
+      try {
+        Object.defineProperty(document, 'title', {
+          get: function () { return nativeDescriptor.get.call(this); },
+          set: function () { nativeDescriptor.set.call(this, TITLE); },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {}
+    }
+    /* Garante og:title e twitter:title atualizados também */
+    document.querySelectorAll('meta[property="og:title"], meta[name="twitter:title"]').forEach(function (m) {
+      if (m.getAttribute('content') !== TITLE) m.setAttribute('content', TITLE);
+    });
+    document.querySelectorAll('meta[name="description"]').forEach(function (m) {
+      if (m.getAttribute('content') !== DESCRIPTION) m.setAttribute('content', DESCRIPTION);
+    });
+  }
+
+  var observer = new MutationObserver(lockTitle);
+  function startObserver() {
+    var titleEl = document.querySelector('title');
+    if (titleEl) {
+      observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
+    }
+    /* Observa o <head> para caso o Framer recriar o <title> */
+    observer.observe(document.head, { childList: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObserver);
+  } else {
+    startObserver();
+  }
+
+  /* 3. Garante o título logo de início */
+  lockTitle();
+})();
+</script>
 <meta name="keywords" content="desenvolvimento feminino, autoconhecimento, evolução pessoal, empoderamento, senso de ser">
 <meta name="author" content="Senso de Ser">
-
-<meta property="og:title" content="Senso de Ser | Desenvolvimento Feminino e Evolução Pessoal">
-<meta property="og:description" content="Um espaço dedicado ao desenvolvimento feminino, autoconhecimento e evolução pessoal.">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Senso de Ser">
 
   <!-- ═══════════════════════════════════════════
        FAVICON & ÍCONES
